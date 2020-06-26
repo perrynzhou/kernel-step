@@ -1,4 +1,4 @@
-KERNEL_SRC = /usr/src/linux-headers-4.19.0-8-amd64/
+KERNEL_SRC = /usr/src/kernels/3.10.0-1127.8.2.el7.x86_64
 obj-m := mem_channel.o
 module-objs := mem_channel.o
 
@@ -8,3 +8,5 @@ all:
 clean:
 	rm *.ko *.o
 	rm -rf  mem_channel_reader
+	rm -rf .mem_channel*
+	rm -rf modules.order  Module.symvers 
