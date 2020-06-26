@@ -154,9 +154,10 @@ static struct file_operations *fops = {
     .release = mem_channel_release,
     .read = mem_channel_read,
     .write = mem_channel_write,
-    .poll = mem_channel_poll};
+    .poll = mem_channel_poll,
+  };
 //when execute insmod xx.ko,mem_channel_init will be called
-static int mem_channel_init()
+static int mem_channel_init(void)
 {
   int result;
   int i = 0;
@@ -210,7 +211,7 @@ failed:
   return result;
 }
 //when rmmod xx.ko,mem_channel_exit will be called
-static void mem_channel_exit()
+static void mem_channel_exit(void)
 {
   cdev_del(&mem_channel_dev);
   int i = 0;

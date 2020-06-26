@@ -1,4 +1,5 @@
-mem_channel.o: /home/perrynzhou/Source/perryn/mem-chan/mem_channel.c \
+mem_channel.o: \
+ /home/perrynzhou/Source/perryn/kernel-step/mem-chan/mem_channel.c \
  /usr/src/linux-headers-4.19.0-8-common/include/linux/kconfig.h \
  include/generated/autoconf.h \
  /usr/src/linux-headers-4.19.0-8-common/include/linux/compiler_types.h \
