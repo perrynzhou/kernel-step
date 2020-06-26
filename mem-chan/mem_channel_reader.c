@@ -24,13 +24,13 @@ int main(int argc, char *argv[])
   int fd = open(argv[1], O_RDWR);
   if (fd < 0)
   {
-    fprintf(stdout, "err:%s\n", strerror(errno));
+    fprintf(stdout, "%s,err:%s\n", argv[1], strerror(errno));
     return -1;
   }
   char *buffer = (char *)malloc(BUFFER_LENGTH);
   memset(buffer, 0, BUFFER_LENGTH);
 
-	char *start = mmap(NULL, BUFFER_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  char *start = mmap(NULL, BUFFER_LENGTH, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
   fd_set rds;
 

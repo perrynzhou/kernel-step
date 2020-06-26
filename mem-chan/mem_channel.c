@@ -49,7 +49,7 @@ struct mem_channel
 static struct mem_channel *chan;
 int mem_channel_open(struct inode *node, struct file *pfile)
 {
-struct mem_channel *mem=NULL;
+  struct mem_channel *mem = NULL;
   int num = node->i_rdev;
   if (num > MEM_CHANNEL_MINOR || num == 0)
   {
@@ -150,17 +150,19 @@ unsigned int mem_channel_poll(struct file *pfile, struct poll_table_struct *wait
   return mask;
 }
 #endif
-int mem_channel_mmap(struct file *pfile, struct vm_area_struct *vma) {
-	struct mem_channel *mem = pfile->private_data;
+int mem_channel_mmap(struct file *pfile, struct vm_area_struct *vma)
+{
+  struct mem_channel *mem = pfile->private_data;
 
-	vma->vm_flags |= VM_IO;
-	vma->vm_flags |= (VM_DONTEXPAND | VM_DONTDUMP);
+  vma->vm_flags |= VM_IO;
+  vma->vm_flags |= (VM_DONTEXPAND | VM_DONTDUMP);
 
-	if (remap_pfn_range(vma, vma->vm_start, virt_to_phys(mem->data) >> PAGE_SHIFT, 
-		vma->vm_end-vma->vm_start, vma->vm_page_prot)) {
-		return -EAGAIN;
-	}
-	return 0;
+  if (remap_pfn_range(vma, vma->vm_start, virt_to_phys(mem->data) >> PAGE_SHIFT,
+                      vma->vm_end - vma->vm_start, vma->vm_page_prot))
+  {
+    return -EAGAIN;
+  }
+  return 0;
 }
 static const struct file_operations fops = {
     .owner = THIS_MODULE,
@@ -170,7 +172,7 @@ static const struct file_operations fops = {
     .write = mem_channel_write,
     .poll = mem_channel_poll,
     .mmap = mem_channel_mmap,
-  };
+};
 //when execute insmod xx.ko,mem_channel_init will be called
 static int mem_channel_init(void)
 {
@@ -194,7 +196,7 @@ static int mem_channel_init(void)
     result = -ENOMEM;
     goto failed;
   }
-  memset(chan, 0,sizeof(struct mem_channel) * MEM_CHANNEL_MINOR);
+  memset(chan, 0, sizeof(struct mem_channel) * MEM_CHANNEL_MINOR);
   for (; i < MEM_CHANNEL_MINOR; i++)
   {
     chan[i].size = MEM_CHANNEL_DATA_LENGTH;
