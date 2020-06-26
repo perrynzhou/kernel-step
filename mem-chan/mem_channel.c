@@ -25,7 +25,7 @@
 
 //second device id in kernel
 #ifndef MEM_CHANNEL_MINOR
-#define MEM_CHANNEL_MINOR 8
+#define MEM_CHANNEL_MINOR 2
 #endif
 
 #ifndef MEM_CHANNEL_DATA_LENGTH
@@ -42,23 +42,25 @@ struct mem_channel
 {
   char *data;
   size_t size;
-#if ENABLE_POOL
+#if ENABLE_POLL
   wait_queue_head_t queue;
 #endif
 };
 static struct mem_channel *chan;
 int mem_channel_open(struct inode *node, struct file *pfile)
 {
+struct mem_channel *mem=NULL;
   int num = node->i_rdev;
   if (num > MEM_CHANNEL_MINOR || num == 0)
   {
     return -ENODEV;
   }
-  node->private_data = chan[num];
-  printk(KERN_INFO, "mem_channel_open %d device success\n", num);
+  mem = &chan[num];
+  pfile->private_data = mem;
+  printk(KERN_INFO "mem_channel_open %d device success\n", num);
   return 0;
 }
-loff_t mem_channel_release(struct inode *node, struct file *pfile)
+int mem_channel_release(struct inode *node, struct file *pfile)
 {
   return 0;
 }
@@ -95,7 +97,7 @@ ssize_t mem_channel_read(struct file *pfile, char __user *buffer, size_t size, l
     ret = strlen(buffer);
     mem->size -= ret;
   }
-  printk(KERN_INFO, "read %d bytes from %ld\n", ret, p);
+  printk(KERN_INFO "read %d bytes from %ld\n", ret, p);
   return ret;
 }
 ssize_t mem_channel_write(struct file *pfile, const char __user *buffer, size_t size, loff_t *ppos)
@@ -103,7 +105,7 @@ ssize_t mem_channel_write(struct file *pfile, const char __user *buffer, size_t 
   int ret;
   unsigned long p = *ppos;
   unsigned int count = size;
-  struct mem_channel *mem = pfile->private_data;
+  struct mem_channel *mem = (struct mem_channel *)pfile->private_data;
   if (p > MEM_CHANNEL_DATA_LENGTH)
   {
     return 0;
@@ -122,7 +124,7 @@ ssize_t mem_channel_write(struct file *pfile, const char __user *buffer, size_t 
     ret = count;
     mem->size += count;
     *(mem->data + p + count) = '\0';
-    printk(KERN_INFO, "write %d bytes from %ld\n", count, p);
+    printk(KERN_INFO "write %d bytes from %ld\n", count, p);
   }
 #if ENABLE_POLL
   is_have_data = 1;
@@ -148,13 +150,26 @@ unsigned int mem_channel_poll(struct file *pfile, struct poll_table_struct *wait
   return mask;
 }
 #endif
-static struct file_operations *fops = {
+int mem_channel_mmap(struct file *pfile, struct vm_area_struct *vma) {
+	struct mem_channel *mem = pfile->private_data;
+
+	vma->vm_flags |= VM_IO;
+	vma->vm_flags |= (VM_DONTEXPAND | VM_DONTDUMP);
+
+	if (remap_pfn_range(vma, vma->vm_start, virt_to_phys(mem->data) >> PAGE_SHIFT, 
+		vma->vm_end-vma->vm_start, vma->vm_page_prot)) {
+		return -EAGAIN;
+	}
+	return 0;
+}
+static const struct file_operations fops = {
     .owner = THIS_MODULE,
-    .open = mem_chanel_open,
+    .open = mem_channel_open,
     .release = mem_channel_release,
     .read = mem_channel_read,
     .write = mem_channel_write,
     .poll = mem_channel_poll,
+    .mmap = mem_channel_mmap,
   };
 //when execute insmod xx.ko,mem_channel_init will be called
 static int mem_channel_init(void)
@@ -169,7 +184,7 @@ static int mem_channel_init(void)
   {
     return result;
   }
-  cdev_init(&mem_channel_dev, fops);
+  cdev_init(&mem_channel_dev, &fops);
   mem_channel_dev.owner = THIS_MODULE;
   //add device to kernel device list,that save data
   cdev_add(&mem_channel_dev, devno, MEM_CHANNEL_MINOR);
@@ -190,7 +205,7 @@ static int mem_channel_init(void)
     }
     memset(chan[i].data, 0, MEM_CHANNEL_DATA_LENGTH);
   }
-  printk(KERN_INFO, "mem_channel init success\n");
+  printk(KERN_INFO "mem_channel init success\n");
   return 0;
 failed:
   unregister_chrdev_region(devno, MEM_CHANNEL_MINOR);
@@ -213,8 +228,8 @@ failed:
 //when rmmod xx.ko,mem_channel_exit will be called
 static void mem_channel_exit(void)
 {
+  int i;
   cdev_del(&mem_channel_dev);
-  int i = 0;
   for (i = 0; i < MEM_CHANNEL_MINOR; i++)
   {
 
@@ -227,9 +242,8 @@ static void mem_channel_exit(void)
     kfree(chan);
     chan = NULL;
   }
-  dev_t devno = MKDEV(MEM_CHANNEL_MAJOR, 0);
-  unregister_chrdev_region(devno, MEM_CHANNEL_MINOR);
-  printk(KERN_INFO, "mem_channel_exit succes\n");
+  unregister_chrdev_region(MKDEV(MEM_CHANNEL_MAJOR, 0), MEM_CHANNEL_MINOR);
+  printk(KERN_INFO "mem_channel_exit succes\n");
 }
 
 MODULE_AUTHOR("perrynzhou@gmail.com");
