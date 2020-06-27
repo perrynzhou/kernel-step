@@ -20,7 +20,7 @@
 
 // first device id in kernel
 #ifndef MEM_CHANNEL_MAJOR
-#define MEM_CHANNEL_MAJOR 32
+#define MEM_CHANNEL_MAJOR 110
 #endif
 
 //second device id in kernel
@@ -36,8 +36,8 @@
 #if ENABLE_POLL
 uint8_t is_have_data = 0;
 #endif
-static const char *mem_channel_device = "memchan";
-static struct cdev mem_channel_dev;
+const char *mem_channel_device = "memchan";
+struct cdev mem_channel_dev;
 struct mem_channel
 {
   char *data;
@@ -46,7 +46,9 @@ struct mem_channel
   wait_queue_head_t queue;
 #endif
 };
-static struct mem_channel *chan;
+struct mem_channel *chan;
+int channel_major = MEM_CHANNEL_MAJOR;
+module_param(channel_major, int, S_IRUGO);
 int mem_channel_open(struct inode *node, struct file *pfile)
 {
   struct mem_channel *mem = NULL;
@@ -179,17 +181,29 @@ static int mem_channel_init(void)
   int result;
   int i = 0;
   //init first device no
-  dev_t devno = MKDEV(MEM_CHANNEL_MAJOR, 0);
+  dev_t devno = MKDEV(channel_major, 0);
   //init minor device array for first device
-  result = register_chrdev_region(devno, MEM_CHANNEL_MINOR, mem_channel_device);
+
+  if (channel_major)
+  {
+    result = register_chrdev_region(devno, MEM_CHANNEL_MINOR, mem_channel_device);
+  }
+  else
+  {
+    result = alloc_chrdev_region(&devno, 0, MEM_CHANNEL_MINOR, mem_channel_device);
+    channel_major = MAJOR(devno);
+  }
+
+  //result = register_chrdev_region(devno, MEM_CHANNEL_MINOR, mem_channel_device);
   if (result != 0)
   {
     return result;
   }
   cdev_init(&mem_channel_dev, &fops);
   mem_channel_dev.owner = THIS_MODULE;
+  mem_channel_dev.ops = &fops;
   //add device to kernel device list,that save data
-  cdev_add(&mem_channel_dev, devno, MEM_CHANNEL_MINOR);
+  cdev_add(&mem_channel_dev, MKDEV(channel_major, 0), MEM_CHANNEL_MINOR);
   chan = kmalloc(MEM_CHANNEL_MINOR * sizeof(struct mem_channel), GFP_KERNEL);
   if (chan == NULL)
   {
@@ -209,8 +223,8 @@ static int mem_channel_init(void)
   }
   printk(KERN_INFO "mem_channel init success\n");
   return 0;
-failed:
-  unregister_chrdev_region(devno, MEM_CHANNEL_MINOR);
+  failed:
+      unregister_chrdev_region(devno, 1);
   for (i = 0; i < MEM_CHANNEL_MINOR; i++)
   {
     if (chan[i].data != NULL)
@@ -244,7 +258,7 @@ static void mem_channel_exit(void)
     kfree(chan);
     chan = NULL;
   }
-  unregister_chrdev_region(MKDEV(MEM_CHANNEL_MAJOR, 0), MEM_CHANNEL_MINOR);
+  unregister_chrdev_region(MKDEV(channel_major, 0), MEM_CHANNEL_MINOR);
   printk(KERN_INFO "mem_channel_exit succes\n");
 }
 

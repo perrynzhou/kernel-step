@@ -17,14 +17,14 @@
 #include <sys/mman.h>
 
 #define BUFFER_LENGTH 128
-
-int main(int argc, char *argv[])
+static const char *device_name = "/dev/memchan";
+int main(void)
 {
 
-  int fd = open(argv[1], O_RDWR);
+  int fd = open(device_name, O_RDWR);
   if (fd < 0)
   {
-    fprintf(stdout, "%s,err:%s\n", argv[1], strerror(errno));
+    fprintf(stdout, "%s,err:%s\n", device_name, strerror(errno));
     return -1;
   }
   char *buffer = (char *)malloc(BUFFER_LENGTH);

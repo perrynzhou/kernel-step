@@ -18,6 +18,7 @@ static const struct modversion_info ____versions[]
 __used
 __attribute__((section("__versions"))) = {
 	{ 0x28950ef1, __VMLINUX_SYMBOL_STR(module_layout) },
+	{ 0x15692c87, __VMLINUX_SYMBOL_STR(param_ops_int) },
 	{ 0x3fa89e8f, __VMLINUX_SYMBOL_STR(cdev_del) },
 	{ 0x37a0cba, __VMLINUX_SYMBOL_STR(kfree) },
 	{ 0x7485e15e, __VMLINUX_SYMBOL_STR(unregister_chrdev_region) },
@@ -25,6 +26,7 @@ __attribute__((section("__versions"))) = {
 	{ 0x98ab5c8d, __VMLINUX_SYMBOL_STR(kmalloc_caches) },
 	{ 0x5f675a65, __VMLINUX_SYMBOL_STR(cdev_add) },
 	{ 0xdacd8618, __VMLINUX_SYMBOL_STR(cdev_init) },
+	{ 0x29537c9e, __VMLINUX_SYMBOL_STR(alloc_chrdev_region) },
 	{ 0xd8e484f0, __VMLINUX_SYMBOL_STR(register_chrdev_region) },
 	{ 0xf0fdf6cb, __VMLINUX_SYMBOL_STR(__stack_chk_fail) },
 	{ 0x754d539c, __VMLINUX_SYMBOL_STR(strlen) },
@@ -51,7 +53,7 @@ __attribute__((section(".modinfo"))) =
 "depends=";
 
 
-MODULE_INFO(srcversion, "1A85BA41F9B51E451618419");
+MODULE_INFO(srcversion, "9550ECB13E9DA7DCFA445D9");
 MODULE_INFO(rhelversion, "7.8");
 #ifdef RETPOLINE
 	MODULE_INFO(retpoline, "Y");
